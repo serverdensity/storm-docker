@@ -34,6 +34,24 @@ RUN set -x \
     && rm -r "$GNUPGHOME" "$DISTRO_NAME.tar.gz" "$DISTRO_NAME.tar.gz.asc" \
     && apk del .build-deps
 
+# Download topologies requirements
+ARG ZOOKEEPER_VERSION=3.4.6
+
+RUN set -x \
+    && apk add --no-cache --virtual .build-deps \
+        gnupg \
+    && ZOO_TEMP="$(mktemp -d)" \
+    && wget -q -P "$ZOO_TEMP" "http://www.apache.org/dist/zookeeper/zookeeper-$ZOOKEEPER_VERSION/zookeeper-$ZOOKEEPER_VERSION.tar.gz" \
+    && wget -q -P "$ZOO_TEMP" "http://www.apache.org/dist/zookeeper/zookeeper-$ZOOKEEPER_VERSION/zookeeper-$ZOOKEEPER_VERSION.tar.gz.asc" \
+    && export GNUPGHOME="$(mktemp -d)" \
+    && gpg --keyserver ha.pool.sks-keyservers.net --recv-key 1D3D275F61D8E2B589C19FD093FB0254D2C80E32 \
+    && gpg --batch --verify "$ZOO_TEMP/zookeeper-$ZOOKEEPER_VERSION.tar.gz.asc" "$ZOO_TEMP/zookeeper-$ZOOKEEPER_VERSION.tar.gz" \
+    && tar -xzf "$ZOO_TEMP/zookeeper-$ZOOKEEPER_VERSION.tar.gz" -C "$ZOO_TEMP" \
+    && cp "$ZOO_TEMP/zookeeper-$ZOOKEEPER_VERSION/zookeeper-$ZOOKEEPER_VERSION.jar" "/$DISTRO_NAME/lib/" \
+    && chown -R "$STORM_USER:$STORM_USER" "/$DISTRO_NAME/lib" \
+    && rm -r "$GNUPGHOME" "$ZOO_TEMP" \
+    && apk del .build-deps
+
 WORKDIR $DISTRO_NAME
 
 ENV PATH $PATH:/$DISTRO_NAME/bin
