@@ -35,6 +35,7 @@ RUN set -x \
     && apk del .build-deps
 
 # Download topologies requirements
+# Zookeeper
 ARG ZOOKEEPER_VERSION=3.4.6
 
 RUN set -x \
@@ -51,6 +52,21 @@ RUN set -x \
     && chown -R "$STORM_USER:$STORM_USER" "/$DISTRO_NAME/lib" \
     && rm -r "$GNUPGHOME" "$ZOO_TEMP" \
     && apk del .build-deps
+
+# Kafka
+ARG KAFKA_VERSION=0.8.2.0
+
+RUN set -x \
+    && KAFKA_TEMP="$(mktemp -d)" \
+    && wget -q "http://mirror.symnds.com/software/Apache/kafka/$KAFKA_VERSION/kafka_2.10-$KAFKA_VERSION.tgz" -O - | /bin/tar -zxf - "kafka_2.10-$KAFKA_VERSION/libs/scala-library-2.10.4.jar" "kafka_2.10-$KAFKA_VERSION/libs/kafka_2.10-$KAFKA_VERSION.jar" "kafka_2.10-$KAFKA_VERSION/libs/metrics-core-2.2.0.jar" "kafka_2.10-$KAFKA_VERSION/libs/kafka-clients-$KAFKA_VERSION.jar" -C "$KAFKA_TEMP" \
+    && cp "$KAFKA_TEMP/kafka_2.10-$KAFKA_VERSION/libs/kafka-clients-$KAFKA_VERSION.jar" "$KAFKA_TEMP/kafka_2.10-$KAFKA_VERSION/libs/metrics-core-2.2.0.jar" "$KAFKA_TEMP/kafka_2.10-$KAFKA_VERSION/libs/scala-library-2.10.4.jar" "/$DISTRO_NAME/lib" \
+    && rm -r "$KAFKA_TEMP"
+
+RUN wget -q http://central.maven.org/maven2/org/apache/curator/curator-client/2.5.0/curator-client-2.5.0.jar -O "/$DISTRO_NAME/lib/curator-client-2.5.0.jar"
+RUN wget -q http://central.maven.org/maven2/org/apache/curator/curator-framework/2.5.0/curator-framework-2.5.0.jar -O "/$DISTRO_NAME/lib/curator-framework-2.5.0.jar"
+RUN wget -q http://central.maven.org/maven2/org/apache/curator/curator-recipes/2.5.0/curator-recipes-2.5.0.jar -O "/$DISTRO_NAME/lib/curator-recipes-2.5.0.jar"
+RUN wget -q http://central.maven.org/maven2/com/google/guava/guava/17.0/guava-17.0.jar -O "/$DISTRO_NAME/lib/guava-17.0.jar"
+RUN chown -R "$STORM_USER:$STORM_USER" "/$DISTRO_NAME/lib"
 
 WORKDIR $DISTRO_NAME
 
